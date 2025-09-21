@@ -166,7 +166,7 @@ include "../../controlador/tarea/eliminar_tarea.php";
                     if ($_SESSION['id_rol'] == 3) {
                         // Si es Agente, mostrar solo las tareas asociadas al empleado
                         $id_usuario = $_SESSION['id_empleado']; // Asegúrate de que este ID esté configurado en la sesión
-                        $sql = $conexion->query("SELECT * FROM vista_tareas_empleado WHERE ID_Empleado = $id_usuario");
+                        $sql = $conexion->query("SELECT * FROM tarea WHERE ID_Empleado = $id_usuario");
                     } else {
                         // Si es Admin o Líder, mostrar todas las tareas
                         $sql = $conexion->query("SELECT * FROM tarea");

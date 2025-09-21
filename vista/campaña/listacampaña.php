@@ -170,7 +170,7 @@ $rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
                     // Consulta según el rol del usuario
                     if ($_SESSION['id_rol'] == 3) {
                         // Si es Agente, solo mostrar campañas activas
-                        $sql = $conexion->query("SELECT * FROM vista_campañas_activas");
+                        $sql = $conexion->query("SELECT * FROM campaña");
                     } else {
                         // Para Admin y Líder, mostrar todas las campañas
                         $sql = $conexion->query("SELECT * FROM campaña");

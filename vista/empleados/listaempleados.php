@@ -124,8 +124,8 @@ include "../../controlador/empleados/eliminar_empleados.php";
                 </thead>
                 <tbody>
                     <?php
-                    $sql = $conexion->query("select * from empleados");
-                    while ($datos = $sql->fetch_object()) { ?>
+                    $sql = mysqli_query($conexion, "select * from empleados");
+                    while ($datos = mysqli_fetch_object($sql)) { ?>
 
                         <tr>
                             <td><?= $datos->ID_Empleado ?></td>
@@ -157,3 +157,4 @@ include "../../controlador/empleados/eliminar_empleados.php";
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../../js/main.js"></script>
 </body>
+</html>

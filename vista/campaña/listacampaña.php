@@ -1,4 +1,5 @@
 <?php
+session_start();
 include "../../modelo/Conexion.php";
 include "../../controlador/campaña/registro_campaña.php";
 include "../../controlador/campaña/eliminar_campaña.php";
@@ -11,8 +12,6 @@ $rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista Campañas</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://kit.fontawesome.com/8eb65f8551.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="../../css/listacampaña.css">
@@ -92,11 +91,11 @@ $rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
                         </ul>
                         <a href="<?php
                                     if ($_SESSION['id_rol'] == 3) {
-                                        echo "../../agente.php"; // Para Agente
+                                        echo "../../agente.php";
                                     } elseif ($_SESSION['id_rol'] == 1) {
-                                        echo "../../admin.php"; // Para Admin
+                                        echo "../../admin.php";
                                     } elseif ($_SESSION['id_rol'] == 2) {
-                                        echo "../../lider.php"; // Para Líder
+                                        echo "../../lider.php";
                                     }
                                     ?>" class="botoninicio me-2">Inicio</a>
                         <a href="../../logout.php" class="botonsesion">Cerrar Sesión</a>
@@ -115,18 +114,7 @@ $rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
                 <a href="agregarcampaña.php" class="boton d-flex justify-content-center align-items-center mx-auto mt-3"
                     style="width: 150px; height: 40px; border-radius: 10px; font-size: 1rem;"> Agregar
                 </a>
-
             </div>
-            <!-- <div class="col-md-6">
-                <h3 class="py-2 px-3 mx-2 shadow-sm text-center"
-                    style="background: linear-gradient(180deg, #4caed4 0%, #5d8ea1 100%);color: black; max-width: 300px; border-radius: 15px; border: 2px solid white; font-size: 1.2rem;">
-                    Generar Reporte
-                </h3>
-                <button class="boton d-flex justify-content-center align-items-center mx-auto mt-3"
-                    style="width: 150px; height: 40px; border-radius: 10px; font-size: 1rem;">
-                    Generar
-                </button>
-            </div> -->
         </div>
     <?php endif; ?>
     <h2 class="text-center py-3 px-3 mx-auto mt-3 shadow-sm"
@@ -141,12 +129,11 @@ $rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
     </script>
     <?php
     // Mostrar mensaje si existe
-    if (isset($_SESSION['mensaje'])) { ?>
-        <?php
+    if (isset($_SESSION['mensaje'])) {
         echo $_SESSION['mensaje'];
-        unset($_SESSION['mensaje']); // Elimina el mensaje tras mostrarlo
-        ?>
-    <?php } ?>
+        unset($_SESSION['mensaje']);
+    }
+    ?>
     <div class="container mt-3">
         <div class="estilo-tabla">
             <table>
@@ -167,63 +154,71 @@ $rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
                 </thead>
                 <tbody>
                     <?php
+                    // CORREGIDO: Usar pg_query en lugar de $conexion->query()
                     // Consulta según el rol del usuario
                     if ($_SESSION['id_rol'] == 3) {
-                        // Si es Agente, solo mostrar campañas activas
-                        $sql = $conexion->query("SELECT * FROM campaña");
+                        // Si es Agente, solo mostrar campañas activas (puedes agregar filtro de fechas)
+                        $sql = pg_query($conexion, "SELECT * FROM campania WHERE fecha_fin >= CURRENT_DATE ORDER BY fecha_inicio DESC");
                     } else {
                         // Para Admin y Líder, mostrar todas las campañas
-                        $sql = $conexion->query("SELECT * FROM campaña");
+                        $sql = pg_query($conexion, "SELECT * FROM campania ORDER BY id_campania DESC");
                     }
 
-                    while ($datos = $sql->fetch_object()) { ?>
-
-                        <tr>
-                            <?php if ($_SESSION['id_rol'] != 3) { ?>
-                                <td><?= $datos->ID_Campaña ?></td> <!-- Solo visible para Admin/Líder -->
-                                <td><?= $datos->ID_Empresa ?></td> <!-- Solo visible para Admin/Líder -->
-                            <?php } ?>
-                            <td><?= $datos->Nombre_Campaña ?></td> <!-- Siempre visible -->
-                            <td class="celdadescripcion">
-                                <?php
-                                $descripcion = $datos->Descripción;
-                                // Verifica si el texto tiene más de 42 caracteres
-                                if (strlen($descripcion) > 42) {
-                                    // Encuentra la última posición de espacio dentro de los primeros 47 caracteres
-                                    $descripcion_truncada = substr($descripcion, 0, strrpos(substr($descripcion, 0, 47), ' '));
-                                } else {
-                                    // Si tiene menos de 42 caracteres, mostramos el texto completo
-                                    $descripcion_truncada = $descripcion;
-                                }
-                                ?>
-
-                                <div class="observaciones-text" data-collapsed="true">
-                                    <?= $descripcion_truncada ?> <!-- Muestra el texto truncado -->
-                                    <span class="extra-text">
-                                        <?= strlen($descripcion) > 42 ? substr($descripcion, strlen($descripcion_truncada)) : '' ?>
-                                    </span> <!-- Resto del texto -->
-                                </div>
-
-                                <?php if (strlen($descripcion) > 42) { ?>
-                                    <button class="ver-mas">Ver más</button> <!-- Botón solo si el texto es largo -->
+                    // CORREGIDO: Usar pg_fetch_object en lugar de fetch_object()
+                    if ($sql && pg_num_rows($sql) > 0) {
+                        while ($datos = pg_fetch_object($sql)) { ?>
+                            <tr>
+                                <?php if ($_SESSION['id_rol'] != 3) { ?>
+                                    <td><?= $datos->id_campania ?></td>
+                                    <td><?= $datos->id_empresa ?></td>
                                 <?php } ?>
-                            </td>
-                            <td><?= $datos->Fecha_Inicio ?></td> <!-- Siempre visible -->
-                            <td><?= $datos->Fecha_Fin ?></td> <!-- Siempre visible -->
-                            <?php if ($_SESSION['id_rol'] != 3) { ?>
-                                <td>
-                                    <div class="botones-acciones">
-                                        <a href="modificarCampaña.php?id=<?= $datos->ID_Campaña ?>" class="botoneditar">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </a>
-                                        <a onclick="return eliminar()" href="listacampaña.php?id=<?= $datos->ID_Campaña ?>" class="botoneliminar">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </a>
+                                <td><?= htmlspecialchars($datos->nombre_campania) ?></td>
+                                <td class="celdadescripcion">
+                                    <?php
+                                    $descripcion = $datos->descripcion ?? '';
+                                    // Verifica si el texto tiene más de 42 caracteres
+                                    if (strlen($descripcion) > 42) {
+                                        // Encuentra la última posición de espacio dentro de los primeros 47 caracteres
+                                        $descripcion_truncada = substr($descripcion, 0, strrpos(substr($descripcion, 0, 47), ' '));
+                                        if ($descripcion_truncada === false || $descripcion_truncada === '') {
+                                            $descripcion_truncada = substr($descripcion, 0, 42);
+                                        }
+                                    } else {
+                                        // Si tiene menos de 42 caracteres, mostramos el texto completo
+                                        $descripcion_truncada = $descripcion;
+                                    }
+                                    ?>
+
+                                    <div class="observaciones-text" data-collapsed="true">
+                                        <?= htmlspecialchars($descripcion_truncada) ?>
+                                        <span class="extra-text">
+                                            <?= strlen($descripcion) > 42 ? htmlspecialchars(substr($descripcion, strlen($descripcion_truncada))) : '' ?>
+                                        </span>
                                     </div>
+
+                                    <?php if (strlen($descripcion) > 42) { ?>
+                                        <button class="ver-mas">Ver más</button>
+                                    <?php } ?>
                                 </td>
-                            <?php } ?>
-                        </tr>
-                    <?php
+                                <td><?= date('d/m/Y', strtotime($datos->fecha_inicio)) ?></td>
+                                <td><?= date('d/m/Y', strtotime($datos->fecha_fin)) ?></td>
+                                <?php if ($_SESSION['id_rol'] != 3) { ?>
+                                    <td>
+                                        <div class="botones-acciones">
+                                            <a href="modificarCampaña.php?id=<?= $datos->id_campania ?>" class="botoneditar">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </a>
+                                            <a onclick="return eliminar()" href="listacampaña.php?id=<?= $datos->id_campania ?>" class="botoneliminar">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                <?php } ?>
+                            </tr>
+                        <?php
+                        }
+                    } else {
+                        echo '<tr><td colspan="' . ($_SESSION['id_rol'] != 3 ? '7' : '4') . '" class="text-center">No hay campañas registradas</td></tr>';
                     }
                     ?>
                 </tbody>

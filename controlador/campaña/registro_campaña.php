@@ -1,5 +1,8 @@
 <?php
-session_start();
+// Verificar si la sesión ya está iniciada antes de llamar session_start()
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!empty($_POST["btnregistrar"]) && $_POST["btnregistrar"] === "ok") {
     if (!empty($_POST["idempresa"]) && !empty($_POST["campaña"]) && !empty($_POST["descripcion"]) && !empty($_POST["fechainicio"]) && !empty($_POST["fechafin"])) {

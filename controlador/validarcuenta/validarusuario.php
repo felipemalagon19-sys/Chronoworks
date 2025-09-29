@@ -1,43 +1,41 @@
 <?php
 include_once(__DIR__ . '/../../modelo/Conexion.php');
 $tipoerror = "";
+
 if (!empty($_POST["btniniciarsesion"]) && $_POST["btniniciarsesion"] === "ok") {
     if (!empty($_POST['correo']) && !empty($_POST['contraseña'])) {
 
-        $correo = $_POST['correo'];
+        $correo = escaparString($_POST['correo']);
         $contraseña = $_POST['contraseña'];
         $error_message = "";
 
-        // Consultar usuario y rol
-        $sql = $conexion->prepare("SELECT Usuario, Contraseña, id_rol, ID_Empleado FROM credenciales WHERE Usuario = ?");
-        $sql->bind_param("s", $correo);
-        $sql->execute();
-        $resultado = $sql->get_result();
+        // Consultar usuario y rol usando nombres de columnas en minúsculas
+        $query = "SELECT usuario, contrasena, id_rol, id_empleado FROM credenciales WHERE usuario = $1";
+        
+        $result = ejecutarQueryPreparada($query, array($correo));
 
-        if ($resultado->num_rows > 0) {
-            $row = $resultado->fetch_assoc();
-            $pwd = $row['Contraseña'];
+        if ($result && pg_num_rows($result) > 0) {
+            $row = obtenerResultado($result);
+            $pwd = $row['contrasena'];
             $idrol = $row['id_rol'];
-            $idEmpleado = $row['ID_Empleado'];
+            $idEmpleado = $row['id_empleado'];
 
             // Validar contraseña
             if ($contraseña === $pwd) {
-                // Consulta para obtener el nombre del empleado según el ID
-                $sqlEmpleado = $conexion->prepare("SELECT Nombre FROM empleados WHERE ID_Empleado = ?");
-                $sqlEmpleado->bind_param("i", $idEmpleado);
-                $sqlEmpleado->execute();
-                $resultadoEmpleado = $sqlEmpleado->get_result();
+                // Consulta para obtener el nombre del empleado
+                $queryEmpleado = "SELECT nombre FROM empleados WHERE id_empleado = $1";
+                $resultEmpleado = ejecutarQueryPreparada($queryEmpleado, array($idEmpleado));
 
-                if ($resultadoEmpleado->num_rows > 0) {
-                    $empleado = $resultadoEmpleado->fetch_assoc();
-                    $nombreEmpleado = $empleado['Nombre'];
+                if ($resultEmpleado && pg_num_rows($resultEmpleado) > 0) {
+                    $empleado = obtenerResultado($resultEmpleado);
+                    $nombreEmpleado = $empleado['nombre'];
 
                     // Iniciar sesión y almacenar información
                     session_start();
-                    $_SESSION['usuario'] = $correo; // Guardar correo
-                    $_SESSION['id_rol'] = $idrol; // Guardar rol
-                    $_SESSION['id_empleado'] = $idEmpleado; // Guardar id del empleado
-                    $_SESSION['nombre_empleado'] = $nombreEmpleado; // Guardar nombre del empleado
+                    $_SESSION['usuario'] = $correo;
+                    $_SESSION['id_rol'] = $idrol;
+                    $_SESSION['id_empleado'] = $idEmpleado;
+                    $_SESSION['nombre_empleado'] = $nombreEmpleado;
 
                     // Redirigir según el rol
                     switch ($idrol) {
@@ -57,23 +55,18 @@ if (!empty($_POST["btniniciarsesion"]) && $_POST["btniniciarsesion"] === "ok") {
                     }
                     exit();
                 } else {
-                    // Si no se encuentra el empleado
                     $error_message = "Empleado no encontrado.";
                     $tipoerror = "danger";
                 }
             } else {
-                // Si la contraseña es incorrecta
                 $error_message = "Contraseña incorrecta.";
                 $tipoerror = "danger";
             }
         } else {
-            // Si el usuario no existe
             $error_message = "Usuario no encontrado.";
             $tipoerror = "secondary";
         }
-        $sql->close();
     } else {
-        // Si algún campo está vacío
         $error_message = "Alguno de los campos está vacío, por favor diligencie todos los datos.";
         $tipoerror = "warning";
     }

@@ -1,227 +1,246 @@
 <?php
+session_start();
+
+// Verificar permisos (admin o líder pueden ver esta página)
+if (!isset($_SESSION['id_rol']) || ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 2)) {
+    header("Location: ../../login.php");
+    exit();
+}
+
 include "../../modelo/Conexion.php";
-include "../../controlador/tarea/registro_tarea.php";
-include "../../controlador/tarea/eliminar_tarea.php";
+
+// Incluir controladores
+include "../../controlador/asignacion/eliminar_asignacion.php";
+include "../../controlador/asignacion/registro_asignacion.php";
+include "../../controlador/asignacion/modificar_asignacion.php";
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Lista Tareas </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../../css/listatarea.css">
-    <link rel="stylesheet" href="../../css/header.css">
+    <link rel="stylesheet" href="../../css/listaasignacion.css">
     <script src="https://kit.fontawesome.com/8eb65f8551.js" crossorigin="anonymous"></script>
+    <title>Lista de Asignaciones</title>
 </head>
+<body id="listaasignacion-vista">
+    <div class="fondo">
+        <header>
+            <!-- Tu header aquí -->
+        </header>
 
-<body class="fondo <?php echo ($_SESSION['id_rol'] == 3) ? 'agente' : ''; ?>" id="listatarea-vista">
-    <header>
-        <div class="fondo_menu">
-            <div class="container-fluid">
-                <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                    <div class="container-fluid">
-                        <a class="navbar-brand">
-                            <img src="../../img/logo.png" alt="Logo" style="width:50px;" class="rounded-pill border border-2">
-                        </a>
-                        <a class="navbar-brand fw-semibold text-light">Chronoworks</a>
-                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                            <span class="navbar-toggler-icon"></span>
-                        </button>
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <?php if ($_SESSION['id_rol'] != 3) : ?>
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle text-light fw-semibold" href="#" id="campanasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Servicios 1
-                                    </a>
-                                    <ul class="dropdown-menu" aria-labelledby="campanasDropdown">
-                                        <li><a class="dropdown-item" href="../asignacion/listaasignacion.php">Asignación</a></li>
-                                        <li><a class="dropdown-item" href="../controlacceso/listacontrol.php">Control Acceso</a></li>
-                                    </ul>
-                                </li>
-                            <?php endif; ?>
-                            <?php if ($_SESSION['id_rol'] === 1) : ?>
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle text-light fw-semibold" href="#" id="empleadosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Servicios 2
-                                    </a>
-                                    <ul class="dropdown-menu" aria-labelledby="empleadosDropdown">
-                                        <li><a class="dropdown-item" href="../empleados/listaempleados.php">Empleados</a></li>
-                                        <li><a class="dropdown-item" href="../empresa/listaempresa.php">Empresa</a></li>
-                                        <li><a class="dropdown-item" href="../roles/listaroles.php">Roles</a></li>
-                                    </ul>
-                                </li>
-                            <?php endif; ?>
-                            <?php if ($_SESSION['id_rol'] === 1) : ?>
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle text-light fw-semibold" href="#" id="contactoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Servicios 3
-                                    </a>
-                                    <ul class="dropdown-menu" aria-labelledby="contactoDropdown">
-                                        <li><a class="dropdown-item" href="../turno/listaturno.php">Turnos</a></li>
-                                        <li><a class="dropdown-item" href="../tarea/listatarea.php">Tareas</a></li>
-                                        <li><a class="dropdown-item" href="../credenciales/listacredenciales.php">Credenciales</a></li>
-                                    </ul>
-                                </li>
-                            <?php endif; ?>
-                            <?php if ($_SESSION['id_rol'] === 3) : ?>
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle text-light fw-semibold" href="#" id="servicios1AgenteDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Servicios 1
-                                    </a>
-                                    <ul class="dropdown-menu" aria-labelledby="servicios1AgenteDropdown">
-                                        <li><a class="dropdown-item" href="../campaña/listacampaña.php">Campañas Activas</a></li>
-                                        <li><a class="dropdown-item" href="../turno/listaturno.php">Mis Turnos</a></li>
-                                    </ul>
-                                </li>
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle text-light fw-semibold" href="#" id="servicios2AgenteDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Servicios 2
-                                    </a>
-                                    <ul class="dropdown-menu" aria-labelledby="servicios2AgenteDropdown">
-                                        <li><a class="dropdown-item" href="../roles/listaroles.php">Mi Rol</a></li>
-                                        <li><a class="dropdown-item" href="../credenciales/listacredenciales.php">Mi Cuenta</a></li>
-                                        <li><a class="dropdown-item" href="../controlacceso/listacontrol.php">Mis Accesos</a></li>
-                                    </ul>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                        <a href="<?php
-                                    if ($_SESSION['id_rol'] == 3) {
-                                        echo "../../agente.php"; // Para Agente
-                                    } elseif ($_SESSION['id_rol'] == 1) {
-                                        echo "../../admin.php"; // Para Admin
-                                    } elseif ($_SESSION['id_rol'] == 2) {
-                                        echo "../../lider.php"; // Para Líder
-                                    }
-                                    ?>" class="botoninicio me-2">Inicio</a>
-                        <a href="../../logout.php" class="botonsesion">Cerrar Sesión</a>
-                    </div>
-                </nav>
-            </div>
-        </div>
-    </header>
-    <?php if ($_SESSION['id_rol'] != 3): ?>
-        <div class="container mt-3 border border-2 p-3" style="border-radius: 15px; max-height: 150px; max-width: 50%;   background: linear-gradient(180deg,rgb(185, 178, 178) 70%, #878c8d 100%);">
-            <div class="col-md-6">
-                <h3 class="py-2 px-4 mx-2 shadow-sm text-center"
-                    style=" background: linear-gradient(180deg, #4caed4 0%, #5d8ea1 100%);color: black; max-width: 300px; border-radius: 15px; border: 2px solid white; font-size: 1.2rem;">
-                    Agregar Tarea
-                </h3>
-                <a href="agregartarea.php" class="boton d-flex justify-content-center align-items-center mx-auto mt-3"
-                    style="width: 150px; height: 40px; border-radius: 10px; font-size: 1rem;"> Agregar
-                </a>
+        <div class="container mt-4">
+            <h2 class="text-center mb-4">Gestión de Asignaciones</h2>
+            
+            <?php
+            // Mostrar mensajes de sesión
+            if (isset($_SESSION['mensaje'])) {
+                echo $_SESSION['mensaje'];
+                unset($_SESSION['mensaje']);
+            }
+            ?>
 
-            </div>
-            <div class="col-md-6">
-                <h3 class="py-2 px-3 mx-2 shadow-sm text-center"
-                    style=" background: linear-gradient(180deg, #4caed4 0%, #5d8ea1 100%);color: black; max-width: 300px; border-radius: 15px; border: 2px solid white; font-size: 1.2rem;">
-                    Generar Reporte
-                </h3>
-                <button class="boton d-flex justify-content-center align-items-center mx-auto mt-3"
-                    style="width: 150px; height: 40px; border-radius: 10px; font-size: 1rem;">
-                    Generar
+            <!-- Botón para nueva asignación -->
+            <div class="mb-3">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaAsignacion">
+                    <i class="fa-solid fa-plus"></i> Nueva Asignación
                 </button>
             </div>
-        </div>
-    <?php endif; ?>
-    <h2 class="text-center py-3 px-4 mx-auto mt-3 shadow-sm"
-        style="background-color:rgb(185, 178, 178);color: black; max-width: 400px; margin-top: 2rem; margin-bottom: 1rem; border-radius: 15px; border: solid 2px; border-color: white;">
-        <?php echo ($_SESSION['id_rol'] === 3) ? 'Tus Tareas' : 'Lista de Tareas'; ?>
-    </h2>
-    <script>
-        function eliminar() {
-            var respuesta = confirm("¿Desea eliminar la tarea?")
-            return respuesta
-        }
-    </script>
-    <?php
-    // Mostrar mensaje si existe
-    if (isset($_SESSION['mensaje'])) { ?>
-        <?php
-        echo $_SESSION['mensaje'];
-        unset($_SESSION['mensaje']); // Elimina el mensaje tras mostrarlo
-        ?>
-    <?php } ?>
-    <div class="container mt-3">
-        <div class="estilo-tabla">
-            <table>
-                <thead>
-                    <tr>
-                        <?php if ($_SESSION['id_rol'] != 3) { ?> <!-- Si NO es agente -->
-                            <th>ID Tarea</th>
-                            <th>ID Empleado</th>
-                        <?php } ?>
-                        <th>Nombre tarea</th>
-                        <th>Detalles</th>
-                        <?php if ($_SESSION['id_rol'] != 3) { ?> <!-- Si NO es agente -->
-                            <th>Acciones</th>
-                        <?php } ?>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    // Consulta según el rol del usuario
-                    if ($_SESSION['id_rol'] == 3) {
-                        // Si es Agente, mostrar solo las tareas asociadas al empleado
-                        $id_usuario = $_SESSION['id_empleado']; // Asegúrate de que este ID esté configurado en la sesión
-                        $sql = $conexion->query("SELECT * FROM tarea WHERE ID_Empleado = $id_usuario");
-                    } else {
-                        // Si es Admin o Líder, mostrar todas las tareas
-                        $sql = $conexion->query("SELECT * FROM tarea");
-                    }
 
-                    while ($datos = $sql->fetch_object()) { ?>
+            <!-- Tabla de asignaciones -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
                         <tr>
-                            <?php if ($_SESSION['id_rol'] != 3) { ?> <!-- Si NO es agente -->
-                                <td><?= $datos->ID_Tarea ?></td>
-                                <td><?= $datos->ID_Empleado ?></td>
-                            <?php } ?>
-                            <td><?= $datos->nombre_tarea ?></td>
-                            <td class="celdadetalles">
-                                <?php
-                                $detalles = $datos->detalles;
-                                // Verifica si el texto tiene más de 25 caracteres
-                                if (strlen($detalles) > 25) {
-                                    // Encuentra la última posición de espacio dentro de los primeros 25 caracteres
-                                    $detalles_truncada = substr($detalles, 0, strrpos(substr($detalles, 0, 25), ' '));
-                                } else {
-                                    // Si tiene menos de 25 caracteres, mostramos el texto completo
-                                    $detalles_truncada = $detalles;
-                                }
-                                ?>
-
-                                <div class="observaciones-text" data-collapsed="true">
-                                    <?= $detalles_truncada ?> <!-- Muestra el texto truncado -->
-                                    <span class="extra-text">
-                                        <?= strlen($detalles) > 25 ? substr($detalles, strlen($detalles_truncada)) : '' ?>
-                                    </span> <!-- Resto del texto -->
-                                </div>
-
-                                <?php if (strlen($detalles) > 25) { ?>
-                                    <button class="ver-mas">Ver más</button> <!-- Botón solo si el texto es largo -->
-                                <?php } ?>
-                            </td>
-                            <?php if ($_SESSION['id_rol'] != 3) { ?> <!-- Si NO es agente -->
-                                <td>
-                                    <div class="botones-acciones">
-                                        <a href="modificarTarea.php?id=<?= $datos->ID_Tarea ?>" class="botoneditar">
+                            <th>ID</th>
+                            <th>Tarea</th>
+                            <th>Campaña</th>
+                            <th>Fecha</th>
+                            <th>Observaciones</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        // Consulta adaptada para PostgreSQL
+                        $sql = "SELECT 
+                                a.id_asignacion,
+                                a.id_tarea,
+                                a.id_campania,
+                                a.fecha,
+                                a.observaciones,
+                                t.nombre_tarea,
+                                c.nombre_campania
+                            FROM asignacion a
+                            INNER JOIN tarea t ON a.id_tarea = t.id_tarea
+                            INNER JOIN campania c ON a.id_campania = c.id_campania
+                            ORDER BY a.fecha DESC";
+                        
+                        // Usar pg_query en lugar de $conexion->query()
+                        $result = pg_query($conexion, $sql);
+                        
+                        if ($result && pg_num_rows($result) > 0) {
+                            // Usar pg_fetch_assoc en lugar de fetch_object()
+                            while ($row = pg_fetch_assoc($result)) {
+                        ?>
+                                <tr>
+                                    <td><?php echo $row['id_asignacion']; ?></td>
+                                    <td><?php echo htmlspecialchars($row['nombre_tarea']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['nombre_campania']); ?></td>
+                                    <td><?php echo date('d/m/Y', strtotime($row['fecha'])); ?></td>
+                                    <td class="celdaobservaciones">
+                                        <span class="cell-text" data-collapsed="true">
+                                            <?php echo htmlspecialchars($row['observaciones']); ?>
+                                        </span>
+                                        <button class="btn btn-sm btn-link ver-mas">Ver más</button>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalEditarAsignacion"
+                                                onclick="cargarDatosEditar(<?php echo $row['id_asignacion']; ?>, 
+                                                                          <?php echo $row['id_tarea']; ?>, 
+                                                                          <?php echo $row['id_campania']; ?>, 
+                                                                          '<?php echo $row['fecha']; ?>', 
+                                                                          '<?php echo addslashes($row['observaciones']); ?>')">
                                             <i class="fa-solid fa-pen-to-square"></i>
-                                        </a>
-                                        <a onclick="return eliminar()" href="listatarea.php?id=<?= $datos->ID_Tarea ?>" class="botoneliminar">
+                                        </button>
+                                        <a href="?id=<?php echo $row['id_asignacion']; ?>" 
+                                           class="btn btn-sm btn-danger"
+                                           onclick="return confirm('¿Está seguro de eliminar esta asignación?')">
                                             <i class="fa-solid fa-trash"></i>
                                         </a>
-                                    </div>
-                                </td>
-                            <?php } ?>
-                        </tr>
-                    <?php } ?>
-                </tbody>
-            </table>
+                                    </td>
+                                </tr>
+                        <?php
+                            }
+                        } else {
+                            echo '<tr><td colspan="6" class="text-center">No hay asignaciones registradas</td></tr>';
+                        }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Nueva Asignación -->
+        <div class="modal fade" id="modalNuevaAsignacion" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Nueva Asignación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="post">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="idtarea" class="form-label">Tarea:</label>
+                                <select class="form-control" name="idtarea" required>
+                                    <option value="">Seleccione una tarea</option>
+                                    <?php
+                                    $sql_tareas = "SELECT id_tarea, nombre_tarea FROM tarea ORDER BY nombre_tarea";
+                                    $result_tareas = pg_query($conexion, $sql_tareas);
+                                    while ($tarea = pg_fetch_assoc($result_tareas)) {
+                                        echo "<option value='{$tarea['id_tarea']}'>{$tarea['nombre_tarea']}</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="idcampaña" class="form-label">Campaña:</label>
+                                <select class="form-control" name="idcampaña" required>
+                                    <option value="">Seleccione una campaña</option>
+                                    <?php
+                                    $sql_campanias = "SELECT id_campania, nombre_campania FROM campania ORDER BY nombre_campania";
+                                    $result_campanias = pg_query($conexion, $sql_campanias);
+                                    while ($campania = pg_fetch_assoc($result_campanias)) {
+                                        echo "<option value='{$campania['id_campania']}'>{$campania['nombre_campania']}</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="fechaasignacion" class="form-label">Fecha:</label>
+                                <input type="datetime-local" class="form-control" name="fechaasignacion" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="observaciones" class="form-label">Observaciones:</label>
+                                <textarea class="form-control" name="observaciones" rows="3" required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" name="btnregistrar" value="ok">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Editar Asignación -->
+        <div class="modal fade" id="modalEditarAsignacion" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Asignación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="post">
+                        <input type="hidden" name="id" id="edit_id">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="edit_idtarea" class="form-label">Tarea:</label>
+                                <select class="form-control" name="idtarea" id="edit_idtarea" required>
+                                    <?php
+                                    $result_tareas = pg_query($conexion, $sql_tareas);
+                                    while ($tarea = pg_fetch_assoc($result_tareas)) {
+                                        echo "<option value='{$tarea['id_tarea']}'>{$tarea['nombre_tarea']}</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_idcampaña" class="form-label">Campaña:</label>
+                                <select class="form-control" name="idcampaña" id="edit_idcampaña" required>
+                                    <?php
+                                    $result_campanias = pg_query($conexion, $sql_campanias);
+                                    while ($campania = pg_fetch_assoc($result_campanias)) {
+                                        echo "<option value='{$campania['id_campania']}'>{$campania['nombre_campania']}</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_fechaasignacion" class="form-label">Fecha:</label>
+                                <input type="datetime-local" class="form-control" name="fechaasignacion" id="edit_fechaasignacion" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_observaciones" class="form-label">Observaciones:</label>
+                                <textarea class="form-control" name="observaciones" id="edit_observaciones" rows="3" required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-warning" name="btnregistrar" value="ok">Actualizar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../../js/main.js"></script>
+    <script>
+        function cargarDatosEditar(id, idTarea, idCampania, fecha, observaciones) {
+            document.getElementById('edit_id').value = id;
+            document.getElementById('edit_idtarea').value = idTarea;
+            document.getElementById('edit_idcampaña').value = idCampania;
+            document.getElementById('edit_fechaasignacion').value = fecha.replace(' ', 'T');
+            document.getElementById('edit_observaciones').value = observaciones;
+        }
+    </script>
 </body>
+</html>

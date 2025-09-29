@@ -1,8 +1,9 @@
 <?php
+session_start();
 include "../../modelo/Conexion.php";
 include "../../controlador/asignacion/registro_asignacion.php";
 include "../../controlador/asignacion/eliminar_asignacion.php";
-$rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
+$rol = $_SESSION['id_rol']; // Puede ser 1 (admin) o 2 (lider)
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -11,8 +12,6 @@ $rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista Asignaciones</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://kit.fontawesome.com/8eb65f8551.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="../../css/listaasignacion.css">
@@ -129,13 +128,16 @@ $rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
                 </thead>
                 <tbody>
                     <?php
-                    $sql = $conexion->query("select * from asignacion");
-                    while ($datos = $sql->fetch_object()) { ?>
+                    // CORREGIDO: Usar pg_query en lugar de $conexion->query()
+                    $sql = pg_query($conexion, "SELECT * FROM asignacion ORDER BY id_asignacion DESC");
+                    
+                    // CORREGIDO: Usar pg_fetch_object en lugar de fetch_object()
+                    while ($datos = pg_fetch_object($sql)) { ?>
                         <tr>
-                            <td><?= $datos->id_Asignacion ?></td>
-                            <td><?= $datos->Id_tarea ?></td>
-                            <td><?= $datos->Id_campaña ?></td>
-                            <td><?= $datos->fecha ?></td>
+                            <td><?= $datos->id_asignacion ?></td>
+                            <td><?= $datos->id_tarea ?></td>
+                            <td><?= $datos->id_campania ?></td>
+                            <td><?= date('d/m/Y', strtotime($datos->fecha)) ?></td>
                             <td class="celdaobservaciones">
                                 <?php
                                 $observaciones = $datos->observaciones;
@@ -162,10 +164,10 @@ $rol = $_SESSION['id_rol']; // Puede ser 'admin' o 'lider'
                             </td>
                             <td>
                                 <div class="botones-acciones">
-                                    <a href="modificarasignacion.php?id=<?= $datos->id_Asignacion ?>" class="botoneditar">
+                                    <a href="modificarasignacion.php?id=<?= $datos->id_asignacion ?>" class="botoneditar">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </a>
-                                    <a onclick="return eliminar()" href="listaasignacion.php?id=<?= $datos->id_Asignacion ?>" class="botoneliminar">
+                                    <a onclick="return eliminar()" href="listaasignacion.php?id=<?= $datos->id_asignacion ?>" class="botoneliminar">
                                         <i class="fa-solid fa-trash"></i>
                                     </a>
                                 </div>

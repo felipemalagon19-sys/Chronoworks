@@ -1,15 +1,15 @@
 <?php
 include_once(__DIR__ . '/../../modelo/Conexion.php');
 $tipoerror = "";
+$error_message = "";
 
 if (!empty($_POST["btniniciarsesion"]) && $_POST["btniniciarsesion"] === "ok") {
     if (!empty($_POST['correo']) && !empty($_POST['contraseña'])) {
 
         $correo = escaparString($_POST['correo']);
         $contraseña = $_POST['contraseña'];
-        $error_message = "";
 
-        // Consultar usuario y rol usando nombres de columnas en minúsculas
+        // CORREGIDO: Usar nombres de columnas en minúsculas
         $query = "SELECT usuario, contrasena, id_rol, id_empleado FROM credenciales WHERE usuario = $1";
         
         $result = ejecutarQueryPreparada($query, array($correo));
@@ -30,7 +30,7 @@ if (!empty($_POST["btniniciarsesion"]) && $_POST["btniniciarsesion"] === "ok") {
                     $empleado = obtenerResultado($resultEmpleado);
                     $nombreEmpleado = $empleado['nombre'];
 
-                    // Iniciar sesión y almacenar información
+                    // Iniciar sesión
                     session_start();
                     $_SESSION['usuario'] = $correo;
                     $_SESSION['id_rol'] = $idrol;
@@ -39,13 +39,13 @@ if (!empty($_POST["btniniciarsesion"]) && $_POST["btniniciarsesion"] === "ok") {
 
                     // Redirigir según el rol
                     switch ($idrol) {
-                        case 1: // Admin
+                        case 1:
                             header("Location: ../../admin.php");
                             break;
-                        case 2: // Líder
+                        case 2:
                             header("Location: ../../lider.php");
                             break;
-                        case 3: // Agente
+                        case 3:
                             header("Location: ../../agente.php");
                             break;
                         default:

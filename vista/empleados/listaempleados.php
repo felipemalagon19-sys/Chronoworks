@@ -124,32 +124,37 @@ include "../../controlador/empleados/eliminar_empleados.php";
                 </thead>
                 <tbody>
                     <?php
-                    $sql = mysqli_query($conexion, "select * from empleados");
-                    while ($datos = mysqli_fetch_object($sql)) { ?>
-
-                        <tr>
-                            <td><?= $datos->ID_Empleado ?></td>
-                            <td><?= $datos->Nombre ?></td>
-                            <td><?= $datos->Apellido ?></td>
-                            <td><?= $datos->Correo ?></td>
-                            <td><?= $datos->Fecha_Ingreso ?></td>
-                            <td><?= $datos->Teléfono ?></td>
-                            <td><?= $datos->id_turno ?></td>
-                            <td>
-                                <div class="botones-acciones">
-                                    <a href="modificarempleados.php?id=<?= $datos->ID_Empleado ?>" class="botoneditar">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </a>
-                                    <a onclick="return eliminar()" href="listaempleados.php?id=<?= $datos->ID_Empleado ?>" class="botoneliminar">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php
+                    // ✅ CORREGIDO: Usar pg_query en lugar de mysqli_query
+                    $sql = pg_query($conexion, "SELECT * FROM empleados ORDER BY id_empleado DESC");
+                    
+                    // ✅ CORREGIDO: Usar pg_fetch_object en lugar de mysqli_fetch_object
+                    if ($sql && pg_num_rows($sql) > 0) {
+                        while ($datos = pg_fetch_object($sql)) { ?>
+                            <tr>
+                                <td><?= htmlspecialchars($datos->id_empleado) ?></td>
+                                <td><?= htmlspecialchars($datos->nombre) ?></td>
+                                <td><?= htmlspecialchars($datos->apellido) ?></td>
+                                <td><?= htmlspecialchars($datos->correo) ?></td>
+                                <td><?= date('d/m/Y', strtotime($datos->fecha_ingreso)) ?></td>
+                                <td><?= htmlspecialchars($datos->telefono) ?></td>
+                                <td><?= htmlspecialchars($datos->id_turno) ?></td>
+                                <td>
+                                    <div class="botones-acciones">
+                                        <a href="modificarempleados.php?id=<?= $datos->id_empleado ?>" class="botoneditar">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </a>
+                                        <a onclick="return eliminar()" href="listaempleados.php?id=<?= $datos->id_empleado ?>" class="botoneliminar">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php
+                        }
+                    } else {
+                        echo '<tr><td colspan="8" class="text-center">No hay empleados registrados</td></tr>';
                     }
                     ?>
-
                 </tbody>
             </table>
         </div>

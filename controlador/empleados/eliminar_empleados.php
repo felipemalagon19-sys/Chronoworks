@@ -1,17 +1,21 @@
 <?php
-
+// ============================================
+// ARCHIVO: controlador/empleados/eliminar_empleados.php
+// ============================================
 if (!empty($_GET["id"])) {
-    $id = $_GET["id"];
-    $sql = $conexion->query("delete from empleados where ID_Empleado=$id ");
-    if ($sql == 1) {
-        // Mensaje de éxito para la otra vista
+    $id = (int)$_GET["id"];
+    
+    $query = "DELETE FROM empleados WHERE id_empleado = $1";
+    $result = pg_query_params($conexion, $query, array($id));
+    
+    if ($result && pg_affected_rows($result) > 0) {
         $_SESSION['mensaje'] = '<div class="alert-message alert-eliminar">¡Empleado eliminado correctamente!</div>';
-        header("Location: listaempleados.php"); // Redirigir a la otra vista
+        header("Location: listaempleados.php");
         exit();
     } else {
-        // Mensaje de error para la otra vista
-        $_SESSION['mensaje'] = '<div class="alert alert-danger">Error al eliminar empleado </div>';
-        header("Location: listaempleados.php"); // Redirigir a la otra vista
+        $_SESSION['mensaje'] = '<div class="alert alert-danger">Error al eliminar empleado</div>';
+        header("Location: listaempleados.php");
         exit();
     }
 }
+?>

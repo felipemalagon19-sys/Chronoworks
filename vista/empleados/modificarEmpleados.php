@@ -1,21 +1,22 @@
 <?php
+// ============================================
+// ARCHIVO: vista/empleados/modificarEmpleados.php
+// ============================================
 include "../../modelo/Conexion.php";
-$id = $_GET["id"];
-$sql = $conexion->query("select * from empleados where ID_Empleado=$id ");
+$id = (int)$_GET["id"];
+$sql = pg_query_params($conexion, "SELECT * FROM empleados WHERE id_empleado = $1", array($id));
 ?>
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Modificar Empleado </title>
+    <title>Modificar Empleado</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../css/modificar.css">
     <link rel="stylesheet" href="../../css/header.css">
     <script src="https://kit.fontawesome.com/8eb65f8551.js" crossorigin="anonymous"></script>
 </head>
-
 <body class="fondo">
     <header>
         <div class="fondo_menu">
@@ -42,43 +43,55 @@ $sql = $conexion->query("select * from empleados where ID_Empleado=$id ");
                 <input type="hidden" name="id" value="<?= $_GET["id"] ?>">
                 <?php
                 include "../../controlador/empleados/modificar_empleados.php";
-                while ($datos = $sql->fetch_object()) { ?>
+                if ($sql && pg_num_rows($sql) > 0) {
+                    $datos = pg_fetch_object($sql);
+                ?>
                     <div class="row mb-3">
                         <div class="col-6">
                             <label for="nombre" class="form-label">Nombre:</label>
-                            <input type="text" class="form-control" id="nombre" placeholder="Nombre del empleado" name="nombre" value="<?= $datos->Nombre ?>">
+                            <input type="text" class="form-control" id="nombre" placeholder="Nombre del empleado" name="nombre" value="<?= htmlspecialchars($datos->nombre) ?>" required>
                         </div>
                         <div class="col-6">
                             <label for="apellido" class="form-label">Apellido:</label>
-                            <input type="text" class="form-control" id="apellido" placeholder="Apellido del empleado" name="apellido" value="<?= $datos->Apellido ?>">
+                            <input type="text" class="form-control" id="apellido" placeholder="Apellido del empleado" name="apellido" value="<?= htmlspecialchars($datos->apellido) ?>" required>
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="mb-3 col-6">
                             <label for="fechaingreso" class="form-label">Fecha de Ingreso:</label>
-                            <input type="date" class="form-control" name="fechaingreso" id="fechaingreso" value="<?= $datos->Fecha_Ingreso ?>">
+                            <input type="date" class="form-control" name="fechaingreso" id="fechaingreso" value="<?= $datos->fecha_ingreso ?>" required>
                         </div>
                         <div class="mb-3 col-6">
                             <label for="email" class="form-label"> Correo del Empleado:</label>
-                            <input type="email" class="form-control" name="email" id="email" placeholder="Correo del empleado" value="<?= $datos->Correo ?>">
+                            <input type="email" class="form-control" name="email" id="email" placeholder="Correo del empleado" value="<?= htmlspecialchars($datos->correo) ?>" required>
                         </div>
                         <div class="mb-3 col-6">
                             <label for="telefono" class="form-label"> Teléfono:</label>
-                            <input type="tel" pattern="\d{3}[-\s]?\d{3}[-\s]?\d{4}" title="Digite un teléfono válido" class="form-control" name="telefono" id="telefono" placeholder="Teléfono del empleado" value="<?= $datos->Teléfono ?>">
+                            <input type="tel" pattern="\d{3}[-\s]?\d{3}[-\s]?\d{4}" title="Digite un teléfono válido" class="form-control" name="telefono" id="telefono" placeholder="Teléfono del empleado" value="<?= htmlspecialchars($datos->telefono) ?>" required>
                         </div>
                         <div class="mb-3 col-6">
                             <label for="turno" class="form-label"> Turno:</label>
-                            <input type="number" class="form-control" name="turno" id="turno" placeholder="Turno del empleado" value="<?= $datos->id_turno ?>">
+                            <select class="form-control" name="turno" id="turno" required>
+                                <?php
+                                $sql_turnos = pg_query($conexion, "SELECT id_turno, hora_entrada, hora_salida FROM turno ORDER BY id_turno");
+                                while ($turno = pg_fetch_object($sql_turnos)) {
+                                    $selected = ($turno->id_turno == $datos->id_turno) ? 'selected' : '';
+                                    echo "<option value='{$turno->id_turno}' $selected>Turno {$turno->id_turno}: {$turno->hora_entrada} - {$turno->hora_salida}</option>";
+                                }
+                                ?>
+                            </select>
                         </div>
                     </div>
-
-                <?php }
+                    <div class="d-flex justify-content-center">
+                        <button type="submit" class="btn btn-primary shadow py-2 px-4 fw-bold col-5" name="btnregistrar" value="ok">Actualizar</button>
+                    </div>
+                <?php
+                } else {
+                    echo '<div class="alert alert-danger">No se encontró el empleado</div>';
+                }
                 ?>
-                <div class="d-flex justify-content-center">
-                    <button type="submit" class="btn btn-primary shadow py-2 px-4 fw-bold col-5" name="btnregistrar" value="ok">Actualizar </button>
-                </div>
             </form>
         </div>
     </div>
-
 </body>
+</html>

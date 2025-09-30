@@ -6,7 +6,7 @@
 $host = "aws-1-us-east-2.pooler.supabase.com";
 $port = "6543";
 $dbname = "postgres";
-$user = "postgres.cvekgtodqwwexjecpgea";
+$user = "postgres.ncciqiwijtnyxdzfnbrn";
 $password = "Cronoworks123456";
 
 $conn_string = "host=$host port=$port dbname=$dbname user=$user password=$password sslmode=require";

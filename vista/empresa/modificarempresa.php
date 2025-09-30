@@ -1,22 +1,25 @@
 <?php
+// ============================================
+// ARCHIVO: vista/empresa/modificarempresa.php
+// ============================================
+session_start();
 include "../../modelo/Conexion.php";
-$id = $_GET['id'];
-$sql = $conexion->query("select * from Empresa where ID_Empresa=$id")
 
+$id = (int)$_GET['id'];
+// ✅ CORREGIDO: Usar pg_query_params
+$sql = pg_query_params($conexion, "SELECT * FROM empresa WHERE id_empresa = $1", array($id));
 ?>
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Modificar Empresa </title>
+    <title>Modificar Empresa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../css/modificar.css">
     <link rel="stylesheet" href="../../css/header.css">
     <script src="https://kit.fontawesome.com/8eb65f8551.js" crossorigin="anonymous"></script>
 </head>
-
 <body class="fondo">
     <header>
         <div class="fondo_menu">
@@ -40,48 +43,55 @@ $sql = $conexion->query("select * from Empresa where ID_Empresa=$id")
     <div class="container">
         <div class="col-12">
             <form method="post">
-                <input type="hidden" name="id" value="<?= $_GET["id"] ?>">
+                <input type="hidden" name="id" value="<?= $_GET['id'] ?>">
                 <?php
-
                 include "../../controlador/empresa/modificar_empresa.php";
-                while ($datos = $sql->fetch_object()) { ?>
-
+                
+                // ✅ CORREGIDO: Usar pg_fetch_object
+                if ($sql && pg_num_rows($sql) > 0) {
+                    $datos = pg_fetch_object($sql);
+                ?>
                     <div class="row mb-3">
                         <div class="mb-3 col-6">
-                            <label for="idtarea" class="form-label">ID de Empresa:</label>
-                            <input type="number" class="form-control" id="idempresa" placeholder="Ingrese ID" name="ID_Empresa" value="<?= $datos->ID_Empresa ?>">
+                            <label for="Nombre_Empresa" class="form-label">Nombre de la Empresa:</label>
+                            <input type="text" class="form-control" id="Nombre_Empresa" name="Nombre_Empresa" value="<?= htmlspecialchars($datos->nombre_empresa) ?>" required>
                         </div>
                         <div class="mb-3 col-6">
-                            <label for="idcampaña" class="form-label">Nombre de la Empresa:</label>
-                            <input type="TEXT" class="form-control" id="nombreempresa" placeholder="Ingrese nombre de empresa" name="Nombre_Empresa" value="<?= $datos->Nombre_Empresa ?>">
-                        </div>
-                        <div class="mb-3 col-6">
-                            <label for="fechaasignacion" class="form-label">Nit de Empresa:</label>
-                            <input type="number" class="form-control" name="Nit_Empresa" id="Nit_Empresa" value="<?= $datos->Nit_Empresa ?>">
-                        </div>
-                        <div class="mb-3 col-6">
-                            <label for="observaciones" class="form-label"> Direccion:</label>
-                            <input class="form-control" name="Direccion" id="Direccion" placeholder="Direccion de empresa" value="<?= $datos->Dirección ?>"></input>
-                        </div>
-                        <div class="mb-3 col-6">
-                            <label for="observaciones" class="form-label"> Telefono:</label>
-                            <input type="text" class="form-control" name="Telefono" id="Telefono" placeholder="Telefono de la empresa" value="<?= $datos->Teléfono ?>"></input>
-                        </div>
-                        <div class="mb-3 col-6">
-                            <label for="observaciones" class="form-label"> Sector:</label>
-                            <input type="text" class="form-control" name="Sector" id="Sector" placeholder="Sector" value="<?= $datos->Sector ?>"></input>
-                        </div>
-                        <div class="mb-3 col-6 m-auto">
-                            <label for="observaciones" class="form-label"> Encargado:</label>
-                            <input type="Text" class="form-control" name="Encargado" id="Encargado" placeholder="Encargado de la empresa" value="<?= $datos->Encargado ?>"></input>
+                            <label for="Nit_Empresa" class="form-label">Nit de Empresa:</label>
+                            <input type="text" class="form-control" name="Nit_Empresa" id="Nit_Empresa" value="<?= htmlspecialchars($datos->nit_empresa) ?>" required>
                         </div>
                     </div>
-                <?php }
+                    <div class="row mb-3">
+                        <div class="mb-3 col-6">
+                            <label for="Direccion" class="form-label">Dirección:</label>
+                            <input class="form-control" name="Direccion" id="Direccion" value="<?= htmlspecialchars($datos->direccion) ?>" required>
+                        </div>
+                        <div class="mb-3 col-6">
+                            <label for="Telefono" class="form-label">Teléfono:</label>
+                            <input type="text" class="form-control" name="Telefono" id="Telefono" value="<?= htmlspecialchars($datos->telefono) ?>" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="mb-3 col-6">
+                            <label for="Sector" class="form-label">Sector:</label>
+                            <input type="text" class="form-control" name="Sector" id="Sector" value="<?= htmlspecialchars($datos->sector) ?>" required>
+                        </div>
+                        <div class="mb-3 col-6">
+                            <label for="Encargado" class="form-label">Encargado:</label>
+                            <input type="text" class="form-control" name="Encargado" id="Encargado" value="<?= htmlspecialchars($datos->encargado) ?>" required>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <button type="submit" class="btn btn-primary shadow py-2 px-4 fw-bold col-5" name="btnregistrar" value="ok">Actualizar</button>
+                    </div>
+                <?php
+                } else {
+                    echo '<div class="alert alert-danger">No se encontró la empresa</div>';
+                }
                 ?>
-                <div class="d-flex justify-content-center">
-                    <button type="submit" class="btn btn-primary shadow py-2 px-4 fw-bold col-5" name="btnregistrar" value="ok">Modificar Empresa </button>
-                </div>
             </form>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+</html>

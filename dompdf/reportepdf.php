@@ -1,4 +1,7 @@
 <?php
+// ============================================
+// ARCHIVO: dompdf/reportepdf.php (CORREGIDO PARA POSTGRESQL)
+// ============================================
 ob_start();
 
 // Incluir Dompdf
@@ -7,7 +10,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 
 // Incluir conexión
-require_once '../modelo/conexion.php';
+require_once '../modelo/Conexion.php';
 
 // Configuración de Dompdf
 $options = new Options();
@@ -15,12 +18,24 @@ $options->set('isHtml5ParserEnabled', true);
 $options->set('isPhpEnabled', true);
 $dompdf = new Dompdf($options);
 
-// Procedimiento almacenado
-$sql = "CALL ObtenerReporteTareasCampaña()";
-$result = $conexion->query($sql);
+// ✅ CORREGIDO: Consulta adaptada para PostgreSQL
+// Nota: En PostgreSQL no hay CALL para procedimientos, usamos funciones o queries directas
+$sql = "SELECT 
+    c.nombre_campania as \"Campaña\",
+    t.nombre_tarea as \"Tarea\",
+    a.fecha as \"Fecha_Asignacion\",
+    a.observaciones as \"Observaciones\",
+    e.nombre_empresa as \"Empresa\"
+FROM asignacion a
+JOIN tarea t ON a.id_tarea = t.id_tarea
+JOIN campania c ON a.id_campania = c.id_campania
+JOIN empresa e ON c.id_empresa = e.id_empresa
+ORDER BY a.fecha DESC";
+
+$result = pg_query($conexion, $sql);
 
 // Generar HTML
-$html = '<h1 style="text-align: center;">Reporte de Clientes</h1>';
+$html = '<h1 style="text-align: center;">Reporte de Asignaciones</h1>';
 $html .= '<table border="1" cellspacing="0" cellpadding="5" style="width: 100%; margin-top: 20px;">';
 $html .= '<thead>
             <tr>
@@ -33,8 +48,8 @@ $html .= '<thead>
           </thead>
           <tbody>';
 
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
+if ($result && pg_num_rows($result) > 0) {
+    while ($row = pg_fetch_assoc($result)) {
         $html .= '<tr>
                     <td>' . htmlspecialchars($row['Campaña']) . '</td>
                     <td>' . htmlspecialchars($row['Tarea']) . '</td>
@@ -48,7 +63,6 @@ if ($result->num_rows > 0) {
 }
 
 $html .= '</tbody></table>';
-$conexion->close();
 
 // Cargar HTML en Dompdf
 $dompdf->loadHtml($html);
@@ -58,5 +72,5 @@ $dompdf->render();
 // Enviar el PDF
 header("Content-Type: application/pdf");
 ob_end_clean();
-$dompdf->stream("reporte_clientes.pdf", array("Attachment" => 0));
+$dompdf->stream("reporte_asignaciones.pdf", array("Attachment" => 0));
 ?>

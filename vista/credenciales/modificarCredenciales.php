@@ -1,21 +1,25 @@
 <?php
+// ============================================
+// ARCHIVO: vista/credenciales/modificarCredenciales.php
+// ============================================
+session_start();
 include "../../modelo/Conexion.php";
-$id = $_GET['id'];
-$sql = $conexion->query("select * from credenciales where ID_Credencial=$id");
+
+$id = (int)$_GET['id'];
+// ✅ CORREGIDO: Usar pg_query_params
+$sql = pg_query_params($conexion, "SELECT * FROM credenciales WHERE id_credencial = $1", array($id));
 ?>
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Modificar Cuenta </title>
+    <title>Modificar Cuenta</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../css/modificar.css">
     <link rel="stylesheet" href="../../css/header.css">
     <script src="https://kit.fontawesome.com/8eb65f8551.js" crossorigin="anonymous"></script>
 </head>
-
 <body class="fondo">
     <header>
         <div class="fondo_menu">
@@ -42,31 +46,61 @@ $sql = $conexion->query("select * from credenciales where ID_Credencial=$id");
                 <input type="hidden" name="id" value="<?= $_GET['id'] ?>">
                 <?php
                 include "../../controlador/credenciales/modificar_credenciales.php";
-                while ($datos = $sql->fetch_object()) { ?>
+                
+                // ✅ CORREGIDO: Usar pg_fetch_object
+                if ($sql && pg_num_rows($sql) > 0) {
+                    $datos = pg_fetch_object($sql);
+                ?>
                     <div class="row mb-3">
                         <div class="col-6">
-                            <label for="correo" class="form-label">Corero:</label>
-                            <input type="text" class="form-control" id="correo" placeholder="correo del empleado" name="correo" value="<?= $datos->Usuario ?>">
+                            <label for="correo" class="form-label">Correo:</label>
+                            <input type="email" class="form-control" id="correo" placeholder="correo del empleado" name="correo" value="<?= htmlspecialchars($datos->usuario) ?>" required>
                         </div>
                         <div class="mb-3 col-6">
                             <label for="pwd" class="form-label">Contraseña:</label>
-                            <input type="password" class="form-control" name="pwd" id="pwd" placeholder="contraseña" value="<?= $datos->Contraseña ?>">
-                        </div>
-                        <div class="col-6">
-                            <label for="idempleado" class="form-label">ID Empleado:</label>
-                            <input type="number" class="form-control" id="idempleado" placeholder="Ingrese ID" name="idempleado" value="<?= $datos->ID_Empleado ?>">
-                        </div>
-                        <div class="mb-3 col-6">
-                            <label for="idrol" class="form-label">ID Rol:</label>
-                            <input type="number" class="form-control" id="idrol" placeholder="Ingrese ID" name="idrol" value="<?= $datos->id_rol ?>">
+                            <input type="password" class="form-control" name="pwd" id="pwd" placeholder="Nueva contraseña" required>
+                            <small class="text-muted">Deja en blanco para mantener la contraseña actual</small>
                         </div>
                     </div>
-                <?php }
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label for="idempleado" class="form-label">Empleado:</label>
+                            <select class="form-control" id="idempleado" name="idempleado" required>
+                                <option value="">Seleccione un empleado</option>
+                                <?php
+                                $sql_empleados = pg_query($conexion, "SELECT id_empleado, nombre, apellido FROM empleados ORDER BY nombre");
+                                while ($emp = pg_fetch_object($sql_empleados)) {
+                                    $selected = ($emp->id_empleado == $datos->id_empleado) ? 'selected' : '';
+                                    echo "<option value='{$emp->id_empleado}' $selected>{$emp->nombre} {$emp->apellido}</option>";
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="mb-3 col-6">
+                            <label for="idrol" class="form-label">Rol:</label>
+                            <select class="form-control" id="idrol" name="idrol" required>
+                                <option value="">Seleccione un rol</option>
+                                <?php
+                                $sql_roles = pg_query($conexion, "SELECT id_rol, nombre FROM roles ORDER BY id_rol");
+                                while ($rol = pg_fetch_object($sql_roles)) {
+                                    $selected = ($rol->id_rol == $datos->id_rol) ? 'selected' : '';
+                                    echo "<option value='{$rol->id_rol}' $selected>{$rol->nombre}</option>";
+                                }
+                                ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <button type="submit" class="btn btn-primary shadow py-2 px-4 fw-bold col-5" name="btnregistrar" value="ok">Actualizar</button>
+                    </div>
+                <?php
+                } else {
+                    echo '<div class="alert alert-danger">No se encontró la cuenta</div>';
+                }
                 ?>
-                <div class="d-flex justify-content-center">
-                    <button type="submit" class="btn btn-primary shadow py-2 px-4 fw-bold col-5" name="btnregistrar" value="ok"> Actualizar </button>
-                </div>
             </form>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+</html>

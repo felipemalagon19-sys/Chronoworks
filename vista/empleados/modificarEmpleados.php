@@ -1,8 +1,10 @@
 <?php
 // ============================================
-// ARCHIVO: vista/empleados/modificarEmpleados.php
+// ARCHIVO: vista/empleados/modificarEmpleados.php (VERSIÓN MEJORADA)
 // ============================================
+session_start();
 include "../../modelo/Conexion.php";
+
 $id = (int)$_GET["id"];
 $sql = pg_query_params($conexion, "SELECT * FROM empleados WHERE id_empleado = $1", array($id));
 ?>
@@ -43,6 +45,7 @@ $sql = pg_query_params($conexion, "SELECT * FROM empleados WHERE id_empleado = $
                 <input type="hidden" name="id" value="<?= $_GET["id"] ?>">
                 <?php
                 include "../../controlador/empleados/modificar_empleados.php";
+                
                 if ($sql && pg_num_rows($sql) > 0) {
                     $datos = pg_fetch_object($sql);
                 ?>
@@ -62,16 +65,19 @@ $sql = pg_query_params($conexion, "SELECT * FROM empleados WHERE id_empleado = $
                             <input type="date" class="form-control" name="fechaingreso" id="fechaingreso" value="<?= $datos->fecha_ingreso ?>" required>
                         </div>
                         <div class="mb-3 col-6">
-                            <label for="email" class="form-label"> Correo del Empleado:</label>
+                            <label for="email" class="form-label">Correo del Empleado:</label>
                             <input type="email" class="form-control" name="email" id="email" placeholder="Correo del empleado" value="<?= htmlspecialchars($datos->correo) ?>" required>
                         </div>
+                    </div>
+                    <div class="row mb-3">
                         <div class="mb-3 col-6">
-                            <label for="telefono" class="form-label"> Teléfono:</label>
+                            <label for="telefono" class="form-label">Teléfono:</label>
                             <input type="tel" pattern="\d{3}[-\s]?\d{3}[-\s]?\d{4}" title="Digite un teléfono válido" class="form-control" name="telefono" id="telefono" placeholder="Teléfono del empleado" value="<?= htmlspecialchars($datos->telefono) ?>" required>
                         </div>
                         <div class="mb-3 col-6">
-                            <label for="turno" class="form-label"> Turno:</label>
+                            <label for="turno" class="form-label">Turno:</label>
                             <select class="form-control" name="turno" id="turno" required>
+                                <option value="">Seleccione un turno</option>
                                 <?php
                                 $sql_turnos = pg_query($conexion, "SELECT id_turno, hora_entrada, hora_salida FROM turno ORDER BY id_turno");
                                 while ($turno = pg_fetch_object($sql_turnos)) {
@@ -93,5 +99,6 @@ $sql = pg_query_params($conexion, "SELECT * FROM empleados WHERE id_empleado = $
             </form>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

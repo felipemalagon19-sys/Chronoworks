@@ -1,16 +1,21 @@
 <?php
+// ============================================
+// ARCHIVO: controlador/credenciales/eliminar_credenciales.php
+// ============================================
 if (!empty($_GET["id"])) {
-    $id = $_GET["id"];
-    $sql = $conexion->query("delete from credenciales where ID_Credencial=$id ");
-    if ($sql == 1) {
-        // Mensaje de éxito para la otra vista
+    $id = (int)$_GET["id"];
+    
+    $query = "DELETE FROM credenciales WHERE id_credencial = $1";
+    $result = pg_query_params($conexion, $query, array($id));
+    
+    if ($result && pg_affected_rows($result) > 0) {
         $_SESSION['mensaje'] = '<div class="alert-message alert-eliminar">¡Cuenta eliminada correctamente!</div>';
-        header("Location: listacredenciales.php"); // Redirigir a la otra vista
+        header("Location: listacredenciales.php");
         exit();
     } else {
-        // Mensaje de error para la otra vista
-        $_SESSION['mensaje'] = '<div class="alert alert-danger">Error al eliminar la cuenta </div>';
-        header("Location: listacredenciales.php"); // Redirigir a la otra vista
+        $_SESSION['mensaje'] = '<div class="alert alert-danger">Error al eliminar cuenta: ' . pg_last_error($conexion) . '</div>';
+        header("Location: listacredenciales.php");
         exit();
     }
 }
+?>

@@ -1,9 +1,15 @@
 <?php
 // ============================================
-// ARCHIVO: vista/roles/listaroles.php
+// ARCHIVO: vista/roles/listaroles.php (VERSIÓN CORREGIDA COMPLETA)
 // ============================================
-?>
-<?php
+session_start();
+
+// Verificar si hay sesión activa
+if (!isset($_SESSION['id_rol'])) {
+    header("Location: ../../login.php");
+    exit();
+}
+
 include "../../modelo/Conexion.php";
 include "../../controlador/roles/registro_roles.php";
 include "../../controlador/roles/eliminar_roles.php";
@@ -43,6 +49,7 @@ include "../../controlador/roles/eliminar_roles.php";
                                     </ul>
                                 </li>
                             <?php endif; ?>
+                            
                             <?php if ($_SESSION['id_rol'] === 1) : ?>
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle text-light fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Servicios 2</a>
@@ -60,6 +67,7 @@ include "../../controlador/roles/eliminar_roles.php";
                                     </ul>
                                 </li>
                             <?php endif; ?>
+                            
                             <?php if ($_SESSION['id_rol'] === 3) : ?>
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle text-light fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Servicios 1</a>
@@ -140,27 +148,35 @@ include "../../controlador/roles/eliminar_roles.php";
                 </thead>
                 <tbody>
                     <?php
-                    // ✅ CORREGIDO: Consulta simple según el rol
+                    // ✅ CORREGIDO: Consulta PostgreSQL según el rol
                     if ($_SESSION['id_rol'] == 3) {
-                        // Para agentes, solo mostrar su rol
+                        // Para agentes, obtener información de su rol desde credenciales
+                        $id_empleado = (int)$_SESSION['id_empleado'];
                         $sql = pg_query_params($conexion, 
-                            "SELECT id_rol, nombre FROM roles WHERE id_rol = $1", 
-                            array($_SESSION['id_rol'])
+                            "SELECT r.id_rol, r.nombre 
+                             FROM roles r
+                             INNER JOIN credenciales c ON c.id_rol = r.id_rol
+                             WHERE c.id_empleado = $1", 
+                            array($id_empleado)
                         );
                     } else {
                         // Para admin/líder, mostrar todos los roles
                         $sql = pg_query($conexion, "SELECT id_rol, nombre FROM roles ORDER BY id_rol");
                     }
 
-                    // ✅ CORREGIDO: Verificar que la consulta sea exitosa
+                    // ✅ Verificación completa antes de iterar
                     if ($sql && pg_num_rows($sql) > 0) {
-                        // ✅ CORREGIDO: Usar pg_fetch_object
-                        while ($datos = pg_fetch_object($sql)) { ?>
+                        while ($datos = pg_fetch_object($sql)) { 
+                            // ✅ Validar que $datos no sea null
+                            if ($datos === false) {
+                                continue;
+                            }
+                            ?>
                             <tr>
                                 <?php if ($_SESSION['id_rol'] != 3) { ?>
-                                    <td><?= htmlspecialchars($datos->id_rol) ?></td>
+                                    <td><?= htmlspecialchars($datos->id_rol ?? '') ?></td>
                                 <?php } ?>
-                                <td><?= htmlspecialchars($datos->nombre) ?></td>
+                                <td><?= htmlspecialchars($datos->nombre ?? 'Sin nombre') ?></td>
                                 <?php if ($_SESSION['id_rol'] != 3) { ?>
                                     <td>
                                         <div class="botones-acciones">

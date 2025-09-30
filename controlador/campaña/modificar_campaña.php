@@ -1,103 +1,108 @@
 <?php
-session_start();
-include_once "../../modelo/Conexion.php";
+// ============================================
+// ARCHIVO 1: controlador/campaña/modificar_campaña.php (CON DEPURACIÓN)
+// ============================================
 
-$id = intval($_GET['id']);
+// Verificar sesión
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// CORREGIDO: Usar pg_query_params en lugar de $conexion->query()
-$sql = pg_query_params($conexion, "SELECT * FROM campania WHERE id_campania = $1", array($id));
+if (!empty($_POST["btnregistrar"]) && $_POST["btnregistrar"] === "ok") {
+    
+    // DEPURACIÓN: Ver qué datos llegan
+    error_log("=== INICIO MODIFICAR CAMPAÑA ===");
+    error_log("POST recibido: " . print_r($_POST, true));
+    
+    // Validar que todos los campos existan
+    $campos_requeridos = ["id", "idempresa", "campaña", "descripcion", "fechainicio", "fechafin"];
+    $campos_faltantes = [];
+    
+    foreach ($campos_requeridos as $campo) {
+        if (empty($_POST[$campo])) {
+            $campos_faltantes[] = $campo;
+        }
+    }
+    
+    if (!empty($campos_faltantes)) {
+        error_log("Campos faltantes: " . implode(", ", $campos_faltantes));
+        $_SESSION['mensaje'] = '<div class="alert alert-warning">Campos faltantes: ' . implode(", ", $campos_faltantes) . '</div>';
+        header("Location: modificarCampaña.php?id=" . ($_POST['id'] ?? ''));
+        exit();
+    }
+    
+    // Limpiar y validar datos
+    $id = (int)$_POST["id"];
+    $id_empresa = (int)$_POST["idempresa"];
+    $nombre_campania = trim($_POST["campaña"]);
+    $descripcion = trim($_POST["descripcion"]);
+    $fecha_inicio = $_POST["fechainicio"];
+    $fecha_fin = $_POST["fechafin"];
+    
+    error_log("ID: $id");
+    error_log("ID Empresa: $id_empresa");
+    error_log("Nombre: $nombre_campania");
+    error_log("Descripción: $descripcion");
+    error_log("Fecha inicio: $fecha_inicio");
+    error_log("Fecha fin: $fecha_fin");
+    
+    // Validar que fecha fin sea mayor que fecha inicio
+    if (strtotime($fecha_fin) < strtotime($fecha_inicio)) {
+        error_log("Error: Fecha fin menor que fecha inicio");
+        $_SESSION['mensaje'] = '<div class="alert alert-warning">La fecha fin debe ser posterior a la fecha inicio</div>';
+        header("Location: modificarCampaña.php?id=" . $id);
+        exit();
+    }
+    
+    // Verificar que la campaña existe
+    $check_query = "SELECT id_campania FROM campania WHERE id_campania = $1";
+    $check_result = pg_query_params($conexion, $check_query, array($id));
+    
+    if (!$check_result || pg_num_rows($check_result) == 0) {
+        error_log("Error: Campaña con ID $id no existe");
+        $_SESSION['mensaje'] = '<div class="alert alert-danger">La campaña no existe</div>';
+        header("Location: listacampaña.php");
+        exit();
+    }
+    
+    // Preparar consulta de actualización
+    $query = "UPDATE campania 
+              SET id_empresa = $1, 
+                  nombre_campania = $2, 
+                  descripcion = $3, 
+                  fecha_inicio = $4, 
+                  fecha_fin = $5 
+              WHERE id_campania = $6";
+    
+    error_log("Query: $query");
+    error_log("Parámetros: [" . implode(", ", [$id_empresa, $nombre_campania, $descripcion, $fecha_inicio, $fecha_fin, $id]) . "]");
+    
+    // Ejecutar actualización
+    $result = pg_query_params($conexion, $query, 
+        array($id_empresa, $nombre_campania, $descripcion, $fecha_inicio, $fecha_fin, $id));
+    
+    if ($result) {
+        $affected = pg_affected_rows($result);
+        error_log("Filas afectadas: $affected");
+        
+        if ($affected > 0) {
+            error_log("✅ Actualización exitosa");
+            $_SESSION['mensaje'] = '<div class="alert-message alert-actualizar">¡Campaña actualizada correctamente!</div>';
+            header("Location: listacampaña.php");
+            exit();
+        } else {
+            error_log("⚠️ No se actualizó ninguna fila");
+            $_SESSION['mensaje'] = '<div class="alert alert-warning">No se realizaron cambios</div>';
+            header("Location: modificarCampaña.php?id=" . $id);
+            exit();
+        }
+    } else {
+        $error = pg_last_error($conexion);
+        error_log("❌ Error en query: $error");
+        $_SESSION['mensaje'] = '<div class="alert alert-danger">Error al actualizar: ' . htmlspecialchars($error) . '</div>';
+        header("Location: modificarCampaña.php?id=" . $id);
+        exit();
+    }
+}
 ?>
-<!DOCTYPE html>
-<html lang="es">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modificar Campaña</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../../css/modificar.css">
-    <link rel="stylesheet" href="../../css/header.css">
-    <script src="https://kit.fontawesome.com/8eb65f8551.js" crossorigin="anonymous"></script>
-</head>
-
-<body class="fondo">
-    <header>
-        <div class="fondo_menu">
-            <div class="container-fluid">
-                <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                    <div class="container-fluid">
-                        <a class="navbar-brand" href="#">
-                            <img src="../../img/logo.png" alt="Logo" style="width:50px;" class="rounded-pill border border-2">
-                        </a>
-                        <a class="navbar-brand fw-semibold text-light" href="index.php">Chronoworks</a>
-                        <a href="<?php echo ($_SESSION['id_rol'] === 1) ? '../../admin.php' : '../../lider.php'; ?>" class="botoninicio">Inicio</a>
-                    </div>
-                </nav>
-            </div>
-        </div>
-    </header>
-    <h2 class="text-center py-3 px-4 mx-auto shadow-sm"
-        style="color: black; max-width: 400px; margin-top: 2rem; margin-bottom: 2rem; border-radius: 15px; border: solid 2px; border-color: white;">
-        Modificar Campaña
-    </h2>
-    <div class="container">
-        <div class="col-12">
-            <form method="post">
-                <input type="hidden" name="id" value="<?= $_GET['id'] ?>">
-                <?php
-                include "../../controlador/campaña/modificar_campaña.php";
-                
-                // CORREGIDO: Usar pg_fetch_object en lugar de fetch_object()
-                if ($sql && pg_num_rows($sql) > 0) {
-                    $datos = pg_fetch_object($sql);
-                ?>
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <label for="idempresa" class="form-label">ID Empresa:</label>
-                            <select class="form-control" name="idempresa" id="idempresa" required>
-                                <?php
-                                // Obtener lista de empresas
-                                $sql_empresas = pg_query($conexion, "SELECT id_empresa, nombre_empresa FROM empresa ORDER BY nombre_empresa");
-                                while ($empresa = pg_fetch_assoc($sql_empresas)) {
-                                    $selected = ($empresa['id_empresa'] == $datos->id_empresa) ? 'selected' : '';
-                                    echo "<option value='{$empresa['id_empresa']}' $selected>{$empresa['nombre_empresa']}</option>";
-                                }
-                                ?>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label for="campaña" class="form-label">Nombre Campaña:</label>
-                            <input type="text" class="form-control" id="campaña" placeholder="Nombre de la campaña" name="campaña" value="<?= htmlspecialchars($datos->nombre_campania) ?>" required>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="mb-3 col-6">
-                            <label for="descripcion" class="form-label">Descripción:</label>
-                            <textarea class="form-control" name="descripcion" id="descripcion" placeholder="Descripción..." required><?= htmlspecialchars($datos->descripcion) ?></textarea>
-                        </div>
-                        <div class="mb-3 col-6">
-                            <label for="fechainicio" class="form-label">Fecha Inicio:</label>
-                            <input type="date" class="form-control" name="fechainicio" id="fechainicio" value="<?= $datos->fecha_inicio ?>" required>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="mb-3 col-6">
-                            <label for="fechafin" class="form-label">Fecha Fin:</label>
-                            <input type="date" class="form-control" name="fechafin" id="fechafin" value="<?= $datos->fecha_fin ?>" required>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-center">
-                        <button type="submit" class="btn btn-primary shadow py-2 px-4 fw-bold col-5" name="btnregistrar" value="ok">Actualizar</button>
-                    </div>
-                <?php
-                } else {
-                    echo '<div class="alert alert-danger">No se encontró la campaña</div>';
-                }
-                ?>
-            </form>
-        </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-
-</html>

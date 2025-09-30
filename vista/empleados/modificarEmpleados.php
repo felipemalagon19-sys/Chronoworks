@@ -1,12 +1,18 @@
 <?php
 // ============================================
-// ARCHIVO: vista/empleados/modificarEmpleados.php (VERSIÓN MEJORADA)
+// ARCHIVO: vista/empleados/modificarEmpleados.php (CORREGIDO)
 // ============================================
 session_start();
-include "../../modelo/Conexion.php";
+include_once __DIR__ . "/../../modelo/Conexion.php";
 
 $id = (int)$_GET["id"];
+
+// ✅ CORREGIDO: Usar pg_query_params en lugar de $conexion->query()
 $sql = pg_query_params($conexion, "SELECT * FROM empleados WHERE id_empleado = $1", array($id));
+
+if (!$sql) {
+    die("Error en la consulta: " . pg_last_error($conexion));
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -44,8 +50,9 @@ $sql = pg_query_params($conexion, "SELECT * FROM empleados WHERE id_empleado = $
             <form method="post">
                 <input type="hidden" name="id" value="<?= $_GET["id"] ?>">
                 <?php
-                include "../../controlador/empleados/modificar_empleados.php";
+                include_once __DIR__ . "/../../controlador/empleados/modificar_empleados.php";
                 
+                // ✅ CORREGIDO: Usar pg_fetch_object en lugar de fetch_object()
                 if ($sql && pg_num_rows($sql) > 0) {
                     $datos = pg_fetch_object($sql);
                 ?>
@@ -79,6 +86,7 @@ $sql = pg_query_params($conexion, "SELECT * FROM empleados WHERE id_empleado = $
                             <select class="form-control" name="turno" id="turno" required>
                                 <option value="">Seleccione un turno</option>
                                 <?php
+                                // ✅ CORREGIDO: Usar pg_query para obtener turnos
                                 $sql_turnos = pg_query($conexion, "SELECT id_turno, hora_entrada, hora_salida FROM turno ORDER BY id_turno");
                                 while ($turno = pg_fetch_object($sql_turnos)) {
                                     $selected = ($turno->id_turno == $datos->id_turno) ? 'selected' : '';
@@ -94,11 +102,13 @@ $sql = pg_query_params($conexion, "SELECT * FROM empleados WHERE id_empleado = $
                 <?php
                 } else {
                     echo '<div class="alert alert-danger">No se encontró el empleado</div>';
+                    echo '<div class="text-center mt-3"><a href="listaempleados.php" class="btn btn-secondary">Volver a la lista</a></div>';
                 }
                 ?>
             </form>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../js/main.js"></script>
 </body>
 </html>

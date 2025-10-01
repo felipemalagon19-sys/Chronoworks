@@ -1,7 +1,9 @@
 FROM php:8.2-apache
 
-# Habilitar extensiones necesarias para PostgreSQL (Supabase)
-RUN docker-php-ext-install pgsql pdo_pgsql
+# Instalar dependencias necesarias para PostgreSQL y PHP
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    && docker-php-ext-install pgsql pdo_pgsql
 
 # Copiar todo tu proyecto al root de Apache
 COPY . /var/www/html/
@@ -10,7 +12,5 @@ COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-EXPOSE 80
+# (Opcional) habilitar mod_rewrite si lo necesitas
 RUN a2enmod rewrite
-
-CMD ["apache2-foreground"]

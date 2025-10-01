@@ -10,5 +10,7 @@ COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# Habilitar mod_rewrite por si usas rutas amigables
+EXPOSE 80
 RUN a2enmod rewrite
+
+CMD ["apache2-foreground"]

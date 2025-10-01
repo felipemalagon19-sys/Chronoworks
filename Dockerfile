@@ -9,3 +9,6 @@ COPY . /var/www/html/
 # Dar permisos
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
+
+# Habilitar mod_rewrite por si usas rutas amigables
+RUN a2enmod rewrite

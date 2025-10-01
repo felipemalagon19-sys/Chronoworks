@@ -7,7 +7,7 @@ RUN apt-get update && \
     docker-php-ext-install pdo_pgsql pgsql
 
 # Copia el código fuente al contenedor
-COPY . /var/www/html/
+COPY ./ /var/www/html
 
 # Da permisos de escritura a Apache
 RUN chown -R www-data:www-data /var/www/html
